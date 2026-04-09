@@ -18,7 +18,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
+#include <cmath>
 
 #include "pbd/xml++.h"
 #include "pbd/string_convert.h"
@@ -46,6 +48,11 @@ class LIBPBD_API ConfigVariableBase {
 	void notify ();
 	void miss ();
 };
+
+template<typename T>
+inline bool is_valid_float(T value) {
+    return std::isfinite(value) && (value == 0.0f || std::isnormal(value));
+}
 
 template<class T>
 class /*LIBPBD_API*/ ConfigVariable : public ConfigVariableBase
@@ -80,6 +87,94 @@ class /*LIBPBD_API*/ ConfigVariable : public ConfigVariableBase
   protected:
 	virtual T get_for_save() { return value; }
 	T value;
+};
+
+template<>
+class /*LIBPBD_API*/ ConfigVariable<float> : public ConfigVariableBase
+{
+  public:
+
+	ConfigVariable (std::string str, float default_val) : ConfigVariableBase (str), default_value (default_val), value (std::nullopt) {}
+	ConfigVariable (std::string str, float default_val, float val) : ConfigVariableBase (str), default_value (default_val), value (std::optional<float>(val)) {}
+
+	float get() const {
+		return value.value_or(default_value);
+	}
+
+	std::string get_as_string () const {
+		return to_string<float>(value.value_or(default_value));
+	}
+
+	virtual bool set (float val) {
+		std::optional<float> new_value = is_valid_float(val) ? std::optional<float>(val) : std::nullopt;
+
+		if (new_value == value) {
+			miss ();
+			return false;
+		}
+		value = new_value;
+		notify ();
+		return true;
+	}
+
+	virtual void set_from_string (std::string const & s) {
+		float val = string_to<float>(s);
+
+		if (is_valid_float(val)) {
+			value = std::optional<float>(val);
+		} else {
+			value = std::nullopt;
+		}
+	}
+
+  protected:
+	virtual float get_for_save() { return value.value_or(default_value); }
+	float default_value;
+	std::optional<float> value;
+};
+
+template<>
+class /*LIBPBD_API*/ ConfigVariable<double> : public ConfigVariableBase
+{
+  public:
+
+	ConfigVariable (std::string str, double default_val) : ConfigVariableBase (str), default_value (default_val), value (std::nullopt) {}
+	ConfigVariable (std::string str, double default_val, double val) : ConfigVariableBase (str), default_value (default_val), value (std::optional<double>(val)) {}
+
+	double get() const {
+		return value.value_or(default_value);
+	}
+
+	std::string get_as_string () const {
+		return to_string<double>(value.value_or(default_value));
+	}
+
+	virtual bool set (double val) {
+		std::optional<double> new_value = is_valid_float(val) ? std::optional<double>(val) : std::nullopt;
+
+		if (new_value == value) {
+			miss ();
+			return false;
+		}
+		value = new_value;
+		notify ();
+		return true;
+	}
+
+	virtual void set_from_string (std::string const & s) {
+		double val = string_to<double>(s);
+
+		if (is_valid_float(val)) {
+			value = std::optional<double>(val);
+		} else {
+			value = std::nullopt;
+		}
+	}
+
+  protected:
+	virtual double get_for_save() { return value.value_or(default_value); }
+	double default_value;
+	std::optional<double> value;
 };
 
 /** Specialisation of ConfigVariable for std::string to cope with whitespace properly */
