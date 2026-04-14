@@ -167,15 +167,25 @@ compiler_flags_dictionaries['clang15-darwin'] = clang15_darwin_dict
 
 # Version stuff
 
+def git(args):
+    cmd = ["git"] + args
+    p = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    p.wait()
+    (out, _) = p.communicate()
+    assert p.returncode == 0, "git {}: {}: {}".format(' '.join(args), p.returncode, out.decode('utf-8').strip())
+    
+    lines = out.decode('utf-8').strip().splitlines()
+
+    if not lines:
+        raise Exception("git {}: no output".format(' '.join(args)))
+
+    return lines[0]
+
 def fetch_git_revision_date ():
-    cmd = ["git", "describe", "HEAD"]
-    output = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0].splitlines()
-    rev = re.sub(r"^[A-Za-z0-9]*\+", "", output[0].decode('utf-8'))
-
-    cmd = ["git", "log", "-1", "--pretty=format:%ci", "HEAD"]
-    output = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE).communicate()[0].splitlines()
-    date = output[0].decode('utf-8').split(None, 2)[0]
-
+    output = git(["describe", "HEAD"])
+    rev = re.sub(r"^[A-Za-z0-9]*\+", "", output)
+    output = git(["log", "-1", "--pretty=format:%ci", "HEAD"])
+    date = output.split(None, 2)[0]
     return rev, date
 
 def fetch_tarball_revision_date():
