@@ -176,7 +176,7 @@ def git(args):
     p.wait()
     (out, _) = p.communicate()
     assert p.returncode == 0, "git {}: {}: {}".format(' '.join(args), p.returncode, out.decode('utf-8').strip())
-    
+
     lines = out.decode('utf-8').strip().splitlines()
 
     if not lines:
