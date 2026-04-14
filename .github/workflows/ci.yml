@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  configure_args: >-
+    --cxx17 --test --run-tests
+  ubuntu_packages: >-
+    build-essential
+    gcc
+    g++
+    gettext
+    intltool
+    itstool
+    ladspa-sdk
+    libarchive-dev
+    libasound2-dev
+    libaubio-dev
+    libboost-dev
+    libcairomm-1.0-dev
+    libcurl4-gnutls-dev
+    libcwiid-dev
+    libdbus-1-dev
+    libfftw3-dev
+    libfluidsynth-dev
+    libglibmm-2.4-dev
+    libhidapi-dev
+    libjack-dev
+    liblilv-dev
+    liblo-dev
+    liblrdf0-dev
+    libltc-dev
+    libpangomm-1.4-dev
+    libpulse-dev    
+    libqm-dsp-dev
+    libreadline-dev
+    librubberband-dev
+    libsamplerate0-dev
+    libsigc++-2.0-dev
+    libsndfile1-dev
+    libsuil-dev
+    libtag1-dev
+    libusb-1.0-0-dev
+    libwebsockets-dev
+    libxinerama-dev
+    libxrandr-dev
+    lv2-dev
+    python3
+    vamp-plugin-sdk
+    libcppunit-dev
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+    - uses: actions/cache@v3
+      with:
+        path: build
+        key: build-${{ runner.os }}-${{ hashFiles('**/wscript') }}-v1
+    - run: sudo apt update
+    - run: sudo apt install -y ${{ env.ubuntu_packages }}
+    - run: ./waf configure ${{ env.configure_args }}
+    - run: ./waf build
