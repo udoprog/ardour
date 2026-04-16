@@ -876,7 +876,9 @@ OSC::catchall (const char *path, const char* types, lo_arg **argv, int argc, lo_
 	} else if (strstr (path, X_("/select"))) {
 		ret = select_parse (path, types, argv, argc, msg);
 	} else if (strstr (path, X_("/goto_marker"))) {
-		ret = goto_marker (types, argv, argc, msg);
+		ret = goto_marker (types, argv, argc, msg, MustStop);
+	} else if (strstr (path, X_("/locate_to_marker"))) {
+		ret = goto_marker (types, argv, argc, msg, RollIfAppropriate);
 	} else if (strstr (path, X_("/link"))) {
 		ret = parse_link (path, types, argv, argc, msg);
 	}
@@ -3183,7 +3185,7 @@ OSC::mixer_scene_state (lo_address addr, bool zero_it)
 }
 
 int
-OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
+OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg, LocateTransportDisposition ltd)
 {
 	if (argc != 1) {
 		PBD::warning << "Wrong number of parameters, one only." << endmsg;
@@ -3201,7 +3203,7 @@ OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
 						for (const auto& l : ll) {
 							if (l->is_mark ()) {
 								if (strcmp (&argv[0]->s, l->name().c_str()) == 0) {
-									session->request_locate (l->start_sample (), false, MustStop);
+									session->request_locate (l->start_sample (), false, ltd);
 									return 0;
 								}
 							}
@@ -3211,7 +3213,7 @@ OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
 						for (auto l = ll.rbegin(); l != ll.rend(); ++l) {
 							if ((*l)->is_mark ()) {
 								if (strcmp (&argv[0]->s, (*l)->name().c_str()) == 0) {
-									session->request_locate ((*l)->start_sample (), false, MustStop);
+									session->request_locate ((*l)->start_sample (), false, ltd);
 									return 0;
 								}
 							}
@@ -3223,7 +3225,7 @@ OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
 							if (l->is_mark ()) {
 								if (strcmp (&argv[0]->s, l->name().c_str()) == 0) {
 									if (l->start_sample() > session->transport_sample()) {
-										session->request_locate (l->start_sample (), false, MustStop);
+										session->request_locate (l->start_sample (), false, ltd);
 										return 0;
 									}
 
@@ -3234,7 +3236,7 @@ OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
 							}
 						}
 						if (first) {
-							session->request_locate (first->start_sample (), false, MustStop);
+							session->request_locate (first->start_sample (), false, ltd);
 							return 0;
 						}
 						break;
@@ -3266,7 +3268,7 @@ OSC::goto_marker (const char* types, lo_arg **argv, int argc, lo_message msg)
 	std::sort (lm.begin(), lm.end(), location_marker_sort);
 	// go there
 	if (marker < lm.size()) {
-		session->request_locate (lm[marker].when, false, MustStop);
+		session->request_locate (lm[marker].when, false, ltd);
 		return 0;
 	}
 	// we were unable to deal with things

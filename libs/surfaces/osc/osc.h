@@ -355,7 +355,7 @@ class OSC : public ARDOUR::ControlProtocol, public AbstractUI<OSCUIRequest>
 		add_marker(markername);
 	}
 
-	int goto_marker(const char* types, lo_arg **argv, int argc, lo_message msg);
+	int goto_marker(const char* types, lo_arg **argv, int argc, lo_message msg, ARDOUR::LocateTransportDisposition ltd);
 	int rename_marker_at_playhead(char *n, lo_message msg);
 	int rename_marker(char *on, char *nn, lo_message msg);
 
