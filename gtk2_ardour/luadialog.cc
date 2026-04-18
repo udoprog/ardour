@@ -386,12 +386,16 @@ public:
 		: LuaDialogWidget (key, title)
 		, _rv (0)
 	{
+		std::map<std::string, std::string> labels_ordered_by_value;
 		for (luabridge::Iterator i (values); !i.isNil (); ++i) {
 			if (!i.key ().isString ())  { continue; }
-			std::string key = i.key ().cast<std::string> ();
-			Gtk::RadioButton* rb = Gtk::manage (new Gtk::RadioButton (_group, key));
+			std::string value = i.value ().cast<std::string> ();
+			labels_ordered_by_value.emplace (value, i.key ().cast<std::string> ());
+		}
+		for (auto const& i : labels_ordered_by_value) {
+			Gtk::RadioButton* rb = Gtk::manage (new Gtk::RadioButton (_group, i.second));
 			_hbox.pack_start (*rb);
-			luabridge::LuaRef* ref = new luabridge::LuaRef (i.value ());
+			luabridge::LuaRef* ref = new luabridge::LuaRef (values[i.second]);
 			_refs.push_back (ref);
 			if (!_rv) { _rv = ref; }
 			rb->signal_toggled ().connect (sigc::bind (
