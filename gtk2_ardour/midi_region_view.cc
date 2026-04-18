@@ -320,7 +320,7 @@ MidiRegionView::canvas_group_event(GdkEvent* ev)
 		}
 	}
 
-	return _editing_context.canvas_bg_event (ev, get_canvas_group());
+	return dynamic_cast<PublicEditor*> (&_editing_context)->canvas_region_view_event (ev, get_canvas_group(), this);
 }
 
 bool
@@ -357,8 +357,6 @@ MidiRegionView::enter_internal (uint32_t state)
 		create_ghost_note(_last_event_x, _last_event_y, state);
 	}
 
-	_editing_context.enable_midi_bindings ();
-
 	// Lower frame handles below notes so they don't steal events
 
 	if (frame_handle_start) {
@@ -375,10 +373,6 @@ MidiRegionView::leave_internal()
 	hide_verbose_cursor ();
 	remove_ghost_note ();
 	_entered_note = 0;
-
-	if (_editing_context.internal_editing()) {
-		_editing_context.disable_midi_bindings ();
-	}
 
 	// Raise frame handles above notes so they catch events
 	if (frame_handle_start) {

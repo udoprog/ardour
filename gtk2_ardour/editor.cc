@@ -938,11 +938,19 @@ Editor::set_entered_regionview (RegionView* rv)
 		*/
 		sensitize_all_region_actions (true);
 	}
+
+	if (rv) {
+		set_entered_track (&rv->get_time_axis_view());
+	}
 }
 
 void
 Editor::set_entered_track (TimeAxisView* tav)
 {
+	if (entered_track == tav) {
+		return;
+	}
+
 	if (entered_track) {
 		entered_track->exited ();
 	}
