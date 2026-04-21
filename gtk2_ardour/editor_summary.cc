@@ -70,7 +70,6 @@ EditorSummary::EditorSummary (Editor& e)
 	  _toolbar_width(0),
 	  _toolbar_height(0)
 {
-	CairoWidget::use_nsglview (UIConfiguration::instance().get_nsgl_view_mode () == NSGLHiRes);
 	add_events (Gdk::POINTER_MOTION_MASK|Gdk::KEY_PRESS_MASK|Gdk::KEY_RELEASE_MASK|Gdk::ENTER_NOTIFY_MASK|Gdk::LEAVE_NOTIFY_MASK);
 	set_can_focus ();
 
