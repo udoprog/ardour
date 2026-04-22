@@ -41,7 +41,7 @@ def configure(conf):
 
 def build(bld):
     obj = bld.shlib(features = 'c cshlib', source=libydkpixbuf_sources)
-    obj.cflags          = [ bld.env['compiler_flags_dict']['pic'] ]
+    obj.cflags          = bld.env['compiler_flags_dict']['vendored']
     obj.export_includes = ['.']
     obj.includes        = ['.', 'ydk-pixbuf']
     obj.name            = 'libydk-pixbuf'

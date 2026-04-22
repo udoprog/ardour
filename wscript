@@ -45,6 +45,9 @@ compiler_flags_dictionaries= {
         'full-optimization' : [ '-O3', '-fomit-frame-pointer', '-ffast-math', '-fno-finite-math-only', '-fstrength-reduce' ],
         # Flags for DSP code, debug and optimized build
         'dsp-optimization' : [ '-O3', '-ffast-math' ],
+        # Additional flags for vendored libraries, like we don't care if they
+        # use deprecated items internally.
+        'vendored' : [ '-Wno-deprecated-declarations' ],
         # Flag to ensure that compiler error output includes column/line numbers
         'show-column' : '-fshow-column',
         # Flags required to build for x86 only (OS X feature)
@@ -492,6 +495,12 @@ int main() { return 0; }''',
             compiler_name = 'gcc'
 
     flags_dict = compiler_flags_dictionaries[compiler_name]
+
+    flags_dict['vendored'] = flags_dict.get('vendored', [])
+
+    if len(flags_dict['pic']) > 0:
+        flags_dict['vendored'].append (flags_dict['pic'])
+
     # Save the compiler flags because we need them at build time
     # when we need to add compiler specific flags in certain
     # libraries

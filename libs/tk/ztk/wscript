@@ -55,7 +55,7 @@ def configure(conf):
 
 def build(bld):
     obj = bld.shlib(features = 'c cshlib', source = libztk_sources)
-    obj.cflags          = [ bld.env['compiler_flags_dict']['pic'] ]
+    obj.cflags          = bld.env['compiler_flags_dict']['vendored']
     obj.export_includes = ['.']
     obj.includes        = ['.', '..', 'ztk']
     obj.name            = 'libztk'

@@ -168,7 +168,7 @@ def configure(conf):
 
 def build(bld):
     obj = bld.shlib(features = 'c cshlib')
-    obj.cflags          = [ bld.env['compiler_flags_dict']['pic'], '-w' ]
+    obj.cflags          = bld.env['compiler_flags_dict']['vendored'] + [ '-w' ]
     obj.export_includes = ['.', 'ydk']
     obj.includes        = ['.', 'ydk']
     obj.name            = 'libydk'

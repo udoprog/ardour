@@ -52,8 +52,8 @@ def configure(conf):
 
 def build(bld):
     obj = bld.shlib(features = 'cxx cxxshlib', source=libydkmm_sources)
-    obj.cxxflags        = [ bld.env['compiler_flags_dict']['pic'] ]
-    obj.cflags          = [ bld.env['compiler_flags_dict']['pic'] ]
+    obj.cxxflags        = bld.env['compiler_flags_dict']['vendored']
+    obj.cflags          = bld.env['compiler_flags_dict']['vendored']
     obj.export_includes = ['.']
     obj.includes        = ['.']
     obj.name            = 'libydkmm'

@@ -195,8 +195,8 @@ def configure(conf):
 
 def build(bld):
     obj = bld.shlib(features = 'cxx cxxshlib', source=libytkmm_sources)
-    obj.cxxflags        = [ bld.env['compiler_flags_dict']['pic'], '-w' ]
-    obj.cflags          = [ bld.env['compiler_flags_dict']['pic'], '-w' ]
+    obj.cxxflags        = bld.env['compiler_flags_dict']['vendored'] + [ '-w' ]
+    obj.cflags          = bld.env['compiler_flags_dict']['vendored'] + [ '-w' ]
     obj.export_includes = ['.']
     obj.includes        = ['.']
     obj.name            = 'libytkmm'
