@@ -115,6 +115,7 @@ public:
 	int remove_port (std::shared_ptr<Port>);
 	int connect (std::shared_ptr<Port> our_port, std::string other_port);
 	int disconnect (std::shared_ptr<Port> our_port, std::string other_port);
+	int forget_connection (std::shared_ptr<Port> our_port, std::string other_port);
 	int disconnect ();
 	bool connected_to (std::shared_ptr<const IO>) const;
 	bool connected_to (const std::string&) const;

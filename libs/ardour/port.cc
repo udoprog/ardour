@@ -355,6 +355,53 @@ Port::get_connections (std::vector<std::string>& c) const
 	return 0;
 }
 
+void
+Port::get_unplugged_connections (std::vector<std::string>& c) const
+{
+	if (!port_manager->running ()) {
+		/* everything is "absent" when stopped; don't flag */
+		return;
+	}
+
+	std::string const bid (AudioEngine::instance()->backend_id (receives_input ()));
+
+	std::vector<std::string> remembered;
+	{
+		PBD::RWLock::ReaderLock lm (_connections_lock);
+		std::map<std::string, ConnectionSet>::const_iterator it = _ext_connections.find (bid);
+		if (it == _ext_connections.end ()) {
+			return;
+		}
+		remembered.insert (remembered.end (), it->second.begin (), it->second.end ());
+	}
+
+	/* query the backend without holding _connections_lock */
+	for (auto const& n : remembered) {
+		if (!port_engine.get_port_by_name (n)) {
+			c.push_back (n);
+		}
+	}
+}
+
+bool
+Port::has_ext_connection (std::string const& other) const
+{
+	std::string const bid (AudioEngine::instance()->backend_id (receives_input ()));
+
+	PBD::RWLock::ReaderLock lm (_connections_lock);
+	std::map<std::string, ConnectionSet>::const_iterator it = _ext_connections.find (bid);
+	if (it == _ext_connections.end ()) {
+		return false;
+	}
+	return it->second.find (other) != it->second.end ();
+}
+
+void
+Port::forget_external_connection (std::string const& other)
+{
+	erase_connection (other);
+}
+
 int
 Port::connect_internal (std::string const & other)
 {

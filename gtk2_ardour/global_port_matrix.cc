@@ -52,7 +52,22 @@ GlobalPortMatrix::setup_ports (int dim)
 
 	_ports[dim].suspend_signals ();
 	_ports[dim].gather (_session, type(), dim == FLOW_IN, false, show_only_bundles ());
+	_unplugged_group[dim] = _ports[dim].gather_unplugged (_session, type(), dim == FLOW_IN, _("Unplugged"));
 	_ports[dim].resume_signals ();
+}
+
+bool
+GlobalPortMatrix::is_unplugged_bundle (std::shared_ptr<Bundle> b, int dim) const
+{
+	if (!_unplugged_group[dim]) {
+		return false;
+	}
+	for (auto const& br : _unplugged_group[dim]->bundles ()) {
+		if (br->bundle == b) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void
@@ -65,13 +80,27 @@ GlobalPortMatrix::set_state (BundleChannel c[2], bool s)
 	Bundle::PortList const & in_ports = c[FLOW_IN].bundle->channel_ports (c[FLOW_IN].channel);
 	Bundle::PortList const & out_ports = c[FLOW_OUT].bundle->channel_ports (c[FLOW_OUT].channel);
 
+	bool const unplugged_in = is_unplugged_bundle (c[FLOW_IN].bundle, FLOW_IN);
+	bool const unplugged_out = is_unplugged_bundle (c[FLOW_OUT].bundle, FLOW_OUT);
+	bool forgot = false;
+
 	for (Bundle::PortList::const_iterator i = in_ports.begin(); i != in_ports.end(); ++i) {
 		for (Bundle::PortList::const_iterator j = out_ports.begin(); j != out_ports.end(); ++j) {
 
 			std::shared_ptr<Port> p = _session->engine().get_port_by_name (*i);
 			std::shared_ptr<Port> q = _session->engine().get_port_by_name (*j);
 
-			if (p) {
+			if (unplugged_in) {
+				if (!s && q) {
+					q->forget_external_connection (*i);
+					forgot = true;
+				}
+			} else if (unplugged_out) {
+				if (!s && p) {
+					p->forget_external_connection (*j);
+					forgot = true;
+				}
+			} else if (p) {
 				if (s) {
 					p->connect (*j);
 				} else {
@@ -92,6 +121,10 @@ GlobalPortMatrix::set_state (BundleChannel c[2], bool s)
 				}
 			}
 		}
+	}
+
+	if (forgot) {
+		setup_global_ports_proxy ();
 	}
 }
 
@@ -114,11 +147,28 @@ GlobalPortMatrix::get_state (BundleChannel c[2]) const
 		return PortMatrixNode::NOT_ASSOCIATED;
 	}
 
+	bool const unplugged_in = is_unplugged_bundle (c[FLOW_IN].bundle, FLOW_IN);
+	bool const unplugged_out = is_unplugged_bundle (c[FLOW_OUT].bundle, FLOW_OUT);
+
 	for (Bundle::PortList::const_iterator i = in_ports.begin(); i != in_ports.end(); ++i) {
 		for (Bundle::PortList::const_iterator j = out_ports.begin(); j != out_ports.end(); ++j) {
 
 			std::shared_ptr<Port> p = AudioEngine::instance()->get_port_by_name (*i);
 			std::shared_ptr<Port> q = AudioEngine::instance()->get_port_by_name (*j);
+
+			if (unplugged_in) {
+				if (!q || !q->has_ext_connection (*i)) {
+					return PortMatrixNode::NOT_ASSOCIATED;
+				}
+				continue;
+			}
+
+			if (unplugged_out) {
+				if (!p || !p->has_ext_connection (*j)) {
+					return PortMatrixNode::NOT_ASSOCIATED;
+				}
+				continue;
+			}
 
 			if (!p && !q) {
 				/* two non-Ardour ports; things are slightly more involved */

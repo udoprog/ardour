@@ -177,6 +177,8 @@ protected:
 	    inputs and outputs should put outputs in list 0 and inputs in list 1. */
 	PortGroupList _ports[2];
 
+	void setup_global_ports_proxy ();
+
 private:
 
 	void hscroll_changed ();
@@ -191,7 +193,6 @@ private:
 	void disassociate_all_on_channel (std::weak_ptr<ARDOUR::Bundle>, uint32_t, int);
 	void disassociate_all_on_bundle (std::weak_ptr<ARDOUR::Bundle>, int);
 	void setup_global_ports ();
-        void setup_global_ports_proxy ();
 	void toggle_show_only_bundles ();
 	bool on_scroll_event (GdkEventScroll *);
 	std::shared_ptr<ARDOUR::IO> io_from_bundle (std::shared_ptr<ARDOUR::Bundle>) const;

@@ -61,10 +61,13 @@ private:
 	void io_changed ();
 	void io_changed_proxy ();
 
+	bool is_unplugged_bundle (std::shared_ptr<ARDOUR::Bundle>) const;
+
 	int _other;
 	int _ours;
 	std::shared_ptr<ARDOUR::IO> _io;
 	std::shared_ptr<PortGroup> _port_group;
+	std::shared_ptr<PortGroup> _unplugged_group;
 	bool _find_inputs_for_io_outputs;
 	PBD::ScopedConnection _io_connection;
 };

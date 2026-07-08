@@ -175,6 +175,32 @@ IO::disconnect (std::shared_ptr<Port> our_port, string other_port)
 }
 
 int
+IO::forget_connection (std::shared_ptr<Port> our_port, string other_port)
+{
+	if (other_port.length() == 0 || our_port == 0) {
+		return 0;
+	}
+
+	/* check that our_port is really one of ours */
+	if (!ports()->contains (our_port)) {
+		return -1;
+	}
+
+	/* drop the remembered connection to a peer that is no longer present */
+
+	DEBUG_TRACE (DEBUG::PortConnectIO,
+	             string_compose("IO::forget_connection %1 from %2\n", our_port->name(), other_port));
+
+	our_port->forget_external_connection (other_port);
+
+	changed (IOChange (IOChange::ConnectionsChanged)); /* EMIT SIGNAL */
+
+	_session.set_dirty ();
+
+	return 0;
+}
+
+int
 IO::connect (std::shared_ptr<Port> our_port, string other_port)
 {
 	if (other_port.length() == 0 || our_port == 0) {

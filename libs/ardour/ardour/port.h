@@ -86,6 +86,18 @@ public:
 	int disconnect_all ();
 	int get_connections (std::vector<std::string> &) const;
 
+	/* Remembered external connections (current backend_id) whose peer port is
+	 * not currently present in the backend (e.g. a hotplugged-away device). */
+	void get_unplugged_connections (std::vector<std::string> &) const;
+
+	/* True if `other` is a remembered external connection for the current
+	 * backend, regardless of whether the peer port is currently present. */
+	bool has_ext_connection (std::string const &) const;
+
+	/* Drop a remembered external connection whose peer is no longer present.
+	 * Unlike disconnect() this does not touch the backend. */
+	void forget_external_connection (std::string const &);
+
 	/* connection by name */
 	bool connected_to (std::string const &) const;
 	int connect (std::string const &);
