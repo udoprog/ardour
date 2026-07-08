@@ -960,7 +960,7 @@ Session::reconnect_ports_after_hotplug ()
 		return;
 	}
 	PBD::Unwinder<bool> uw (_reconnecting_routes_in_progress, true);
-	_engine.reconnect_ports (this);
+	_engine.reconnect_ports (this, false);
 }
 
 void

@@ -924,7 +924,7 @@ PortManager::set_pretty_names (std::vector<std::string> const& port_names, DataT
 }
 
 int
-PortManager::reconnect_ports (Session* s)
+PortManager::reconnect_ports (Session* s, bool include_auto_connect)
 {
 	std::shared_ptr<Ports const> p = _ports.reader ();
 
@@ -936,17 +936,19 @@ PortManager::reconnect_ports (Session* s)
 		s = AudioEngine::instance ()->session ();
 	}
 
-	if (s && s->master_out() && !s->master_out ()->output()->has_ext_connection()) {
-		s->auto_connect_master_bus ();
-	}
-	if (s && s->monitor_out() && !s->monitor_out ()->output()->has_ext_connection()) {
-		s->auto_connect_monitor_bus ();
-	}
-	if (s && s->click_io()) {
-		s->reconnect_click_output ();
-	}
-	if (s) {
-		s->reconnect_ltc_output ();
+	if (include_auto_connect) {
+		if (s && s->master_out() && !s->master_out ()->output()->has_ext_connection()) {
+			s->auto_connect_master_bus ();
+		}
+		if (s && s->monitor_out() && !s->monitor_out ()->output()->has_ext_connection()) {
+			s->auto_connect_monitor_bus ();
+		}
+		if (s && s->click_io()) {
+			s->reconnect_click_output ();
+		}
+		if (s) {
+			s->reconnect_ltc_output ();
+		}
 	}
 
 
