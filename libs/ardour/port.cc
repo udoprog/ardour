@@ -167,10 +167,15 @@ Port::port_connected_or_disconnected (std::weak_ptr<Port> w0, std::string n1, st
 	/* a cheaper, less hacky way to do boost::shared_from_this() ...  */
 	std::shared_ptr<Port> pself = AudioEngine::instance()->get_port_by_name (name());
 
+	/* A disconnect callback also fires when a hardware device's ports are
+	 * removed (hotplug).
+	 */
+	const bool restore_connection = Config->get_restore_device_connections();
+
 	if (p0 == pself) {
 		if (con) {
 			insert_connection (n2);
-		} else {
+		} else if (!restore_connection || AudioEngine::instance()->port_is_mine (n2)) {
 			erase_connection (n2);
 		}
 		ConnectedOrDisconnected (p0, p1, con); // emit signal
@@ -178,7 +183,7 @@ Port::port_connected_or_disconnected (std::weak_ptr<Port> w0, std::string n1, st
 	if (p1 == pself) {
 		if (con) {
 			insert_connection (n1);
-		} else {
+		} else if (!restore_connection || AudioEngine::instance()->port_is_mine (n1)) {
 			erase_connection (n1);
 		}
 		ConnectedOrDisconnected (p1, p0, con); // emit signal
@@ -788,8 +793,17 @@ Port::reconnect ()
 		_int_connections.erase (c);
 	}
 
-	for (auto const& c : f_ext) {
-		_ext_connections[bid].erase (c);
+	/* Keep external connections that failed to reconnect when connection
+	 * restore is enabled. The peer is likely a hotplugged-away device that will
+	 * return. Retaining lets a later re-appearance restore the routing (and
+	 * lets the mixer flag it as unplugged). With restoration off, prune as
+	 * before so genuinely-dead saved connections don't linger across
+	 * restart/session-load.
+	 */
+	if (!Config->get_restore_device_connections ()) {
+		for (auto const& c : f_ext) {
+			_ext_connections[bid].erase (c);
+		}
 	}
 
 	return count == 0 ? -1 : 0;

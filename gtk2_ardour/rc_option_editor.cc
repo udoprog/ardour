@@ -4871,6 +4871,17 @@ These settings will only take effect after %1 is restarted.\n\
 	Gtkmm2ext::UI::instance()->set_tip (bo->tip_widget(),
 			_("When enabled, external per session hardware to hardware connections are restored on session load. This applies to internal backends (ALSA, Portaudio/ASIO, CoreAudio) only."));
 
+	bo = new BoolOption (
+			"restore-device-connections",
+			_("Restore track/bus connections to devices across hotplug"),
+			sigc::mem_fun (*_rc_config, &RCConfiguration::get_restore_device_connections),
+			sigc::mem_fun (*_rc_config, &RCConfiguration::set_restore_device_connections)
+			);
+
+	add_option (_("Signal Flow"), bo);
+	Gtkmm2ext::UI::instance()->set_tip (bo->tip_widget(),
+			_("When enabled, connections between tracks/busses and ports are remembered and automatically restored if the device is removed and re-added (hotplugged) while the audio engine is running. This applies to all backends."));
+
 
 	/* Click */
 

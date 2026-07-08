@@ -2399,6 +2399,7 @@ private:
 	void setup_bundles_rcu ();
 
 	void port_registry_changed ();
+	void reconnect_ports_after_hotplug ();
 	void probe_ctrl_surfaces ();
 
 	void save_as_bring_callback (uint32_t, uint32_t, std::string);

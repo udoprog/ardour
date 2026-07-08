@@ -945,6 +945,22 @@ Session::port_registry_changed()
 	if (_engine.running() && !deletion_in_progress () && ControlProtocolManager::instance().session()) {
 		_butler->delegate (std::bind (&Session::probe_ctrl_surfaces, this));
 	}
+
+	/* Restore routing to device ports that (re)appear via hotplug. */
+	if (_engine.running() && !inital_connect_or_deletion_in_progress()
+	    && Config->get_restore_device_connections()) {
+		_butler->delegate (std::bind (&Session::reconnect_ports_after_hotplug, this));
+	}
+}
+
+void
+Session::reconnect_ports_after_hotplug ()
+{
+	if (!_engine.running() || inital_connect_or_deletion_in_progress()) {
+		return;
+	}
+	PBD::Unwinder<bool> uw (_reconnecting_routes_in_progress, true);
+	_engine.reconnect_ports (this);
 }
 
 void
