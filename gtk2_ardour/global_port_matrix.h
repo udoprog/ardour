@@ -49,6 +49,10 @@ private:
 		FLOW_OUT = 0,
 		FLOW_IN = 1,
 	};
+
+	bool is_unplugged_bundle (std::shared_ptr<ARDOUR::Bundle>, int dim) const;
+
+	std::shared_ptr<PortGroup> _unplugged_group[2];
 };
 
 class GlobalPortMatrixWindow : public ArdourWindow

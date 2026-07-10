@@ -198,7 +198,7 @@ IOButtonBase::set_label (IOButtonBase& self, ARDOUR::Session& session, std::shar
 
 	DataType dt    = guess_main_type (io);
 	bool     input = io->direction () == IO::Input;
-	string   arrow = Gtkmm2ext::markup_escape_text (input ? " <- " : " -> ");
+	string   arrow = Gtkmm2ext::markup_escape_text (input ? " ← " : " → ");
 
 	/* Fill in the tooltip. Also count:
 	 *  - The total number of connections.
@@ -213,10 +213,12 @@ IOButtonBase::set_label (IOButtonBase& self, ARDOUR::Session& session, std::shar
 	}
 
 	vector<string> port_connections;
+	vector<string> unplugged;
 
 	for (auto const& port : *io->ports ()) {
 		port_connections.clear ();
 		port->get_connections (port_connections);
+		port->get_unplugged_connections (unplugged);
 
 		uint32_t port_connection_count = 0;
 
@@ -244,6 +246,12 @@ IOButtonBase::set_label (IOButtonBase& self, ARDOUR::Session& session, std::shar
 	if (total_connection_count == 0) {
 		tooltip << endl
 		        << _("Disconnected");
+	}
+
+	for (auto const& n : unplugged) {
+		tooltip << endl
+		        << u8"⚠ "
+		        << string_compose (_("%1 is unplugged"), Gtkmm2ext::markup_escape_text (n));
 	}
 
 	if (typed_connection_count == 0) {
@@ -427,7 +435,7 @@ IOButtonBase::set_label (IOButtonBase& self, ARDOUR::Session& session, std::shar
 	}
 
 	if (total_connection_count > typed_connection_count) {
-		label << u8"\u2295"; /* circled plus */
+		label << u8"\u2295"; // CIRCLED PLUS
 	}
 
 	self.set_text (label.str ());
@@ -465,6 +473,8 @@ IOButton::set_route (std::shared_ptr<ARDOUR::Route> rt, RouteUI* routeui)
 
 	AudioEngine::instance ()->PortConnectedOrDisconnected.connect (_connections, invalidator (*this), std::bind (&IOButton::port_connected_or_disconnected, this, _1, _3), gui_context ());
 	AudioEngine::instance ()->PortPrettyNameChanged.connect (_connections, invalidator (*this), std::bind (&IOButton::port_pretty_name_changed, this, _1), gui_context ());
+	/* Callback registered for when ports are updated for visual indicator of whether or not they are unplugged */
+	AudioEngine::instance ()->PortRegisteredOrUnregistered.connect (_connections, invalidator (*this), std::bind (&IOButton::update, this), gui_context ());
 
 	io ()->changed.connect (_connections, invalidator (*this), std::bind (&IOButton::update, this), gui_context ());
 	/* We're really only interested in BundleRemoved when connected to that bundle */

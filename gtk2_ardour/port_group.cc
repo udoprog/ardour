@@ -782,6 +782,72 @@ PortGroupList::gather (ARDOUR::Session* session, ARDOUR::DataType type, bool inp
 	emit_changed ();
 }
 
+std::shared_ptr<PortGroup>
+PortGroupList::gather_unplugged_for_io (std::shared_ptr<IO> io, DataType type, bool inputs, std::string const& name)
+{
+	std::shared_ptr<PortGroup> group (new PortGroup (name));
+
+	std::map<DataType, std::set<std::string> > unplugged;
+
+	for (auto const& p : *io->ports ()) {
+		DataType const dt = p->type ();
+		if (type != DataType::NIL && dt != type) {
+			continue;
+		}
+		std::vector<std::string> v;
+		p->get_unplugged_connections (v);
+		unplugged[dt].insert (v.begin (), v.end ());
+	}
+
+	add_unplugged_bundles (unplugged, inputs, group);
+	add_group_if_not_empty (group);
+	return group;
+}
+
+std::shared_ptr<PortGroup>
+PortGroupList::gather_unplugged (Session* session, DataType type, bool inputs, std::string const& name)
+{
+	std::shared_ptr<PortGroup> group (new PortGroup (name));
+
+	if (!session) {
+		return group;
+	}
+
+	std::map<DataType, std::set<std::string> > unplugged;
+
+	for (DataType::iterator dt = DataType::begin (); dt != DataType::end (); ++dt) {
+		if (type != DataType::NIL && *dt != type) {
+			continue;
+		}
+		PortManager::PortList plist;
+		AudioEngine::instance()->get_ports (*dt, plist);
+		for (auto const& p : plist) {
+			if (p->sends_output () != inputs) {
+				continue;
+			}
+			std::vector<std::string> v;
+			p->get_unplugged_connections (v);
+			unplugged[*dt].insert (v.begin (), v.end ());
+		}
+	}
+
+	add_unplugged_bundles (unplugged, inputs, group);
+	add_group_if_not_empty (group);
+	return group;
+}
+
+void
+PortGroupList::add_unplugged_bundles (std::map<DataType, std::set<std::string> > const & unplugged, bool inputs, std::shared_ptr<PortGroup> group) const
+{
+	for (auto const& mt : unplugged) {
+		if (mt.second.empty ()) {
+			continue;
+		}
+		std::vector<std::string> names (mt.second.begin (), mt.second.end ());
+		add_bundles_for_ports (names, mt.first, inputs, false, group);
+	}
+}
+
 void
 PortGroupList::add_bundles_for_ports (std::vector<std::string> const & p, ARDOUR::DataType type, bool inputs, bool allow_dups, std::shared_ptr<PortGroup> group) const
 {

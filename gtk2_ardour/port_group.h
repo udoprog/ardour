@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -109,6 +110,8 @@ public:
 	void add_group (std::shared_ptr<PortGroup>);
 	void add_group_if_not_empty (std::shared_ptr<PortGroup>);
 	void gather (ARDOUR::Session *, ARDOUR::DataType, bool, bool, bool);
+	std::shared_ptr<PortGroup> gather_unplugged_for_io (std::shared_ptr<ARDOUR::IO>, ARDOUR::DataType, bool inputs, std::string const& name);
+	std::shared_ptr<PortGroup> gather_unplugged (ARDOUR::Session *, ARDOUR::DataType, bool inputs, std::string const& name);
 	PortGroup::BundleList const & bundles () const;
 	void clear ();
 	void remove_bundle (std::shared_ptr<ARDOUR::Bundle>);
@@ -145,6 +148,7 @@ private:
 	void emit_bundle_changed (ARDOUR::Bundle::Change);
 	std::shared_ptr<ARDOUR::Bundle> make_bundle_from_ports (std::vector<std::string> const &, ARDOUR::DataType, bool, std::string const& bundle_name = std::string()) const;
 	void add_bundles_for_ports (std::vector<std::string> const &, ARDOUR::DataType, bool, bool, std::shared_ptr<PortGroup>) const;
+	void add_unplugged_bundles (std::map<ARDOUR::DataType, std::set<std::string> > const &, bool inputs, std::shared_ptr<PortGroup>) const;
 	void maybe_add_processor_to_list (std::weak_ptr<ARDOUR::Processor>, std::list<std::shared_ptr<ARDOUR::IO> > *, bool, std::set<std::shared_ptr<ARDOUR::IO> > &);
 
 	mutable PortGroup::BundleList _bundles;

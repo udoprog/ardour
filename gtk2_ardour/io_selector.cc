@@ -122,6 +122,7 @@ IOSelector::setup_ports (int dim)
 	if (dim == _other) {
 
 		_ports[_other].gather (_session, type(), _find_inputs_for_io_outputs, false, show_only_bundles ());
+		_unplugged_group = _ports[_other].gather_unplugged_for_io (_io, type(), _find_inputs_for_io_outputs, _("Unplugged"));
 
 	} else {
 
@@ -132,11 +133,27 @@ IOSelector::setup_ports (int dim)
 	_ports[dim].resume_signals ();
 }
 
+bool
+IOSelector::is_unplugged_bundle (std::shared_ptr<Bundle> b) const
+{
+	if (!_unplugged_group) {
+		return false;
+	}
+	for (auto const& br : _unplugged_group->bundles ()) {
+		if (br->bundle == b) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void
 IOSelector::set_state (ARDOUR::BundleChannel c[2], bool s)
 {
 	ARDOUR::Bundle::PortList const & our_ports = c[_ours].bundle->channel_ports (c[_ours].channel);
 	ARDOUR::Bundle::PortList const & other_ports = c[_other].bundle->channel_ports (c[_other].channel);
+
+	bool const unplugged = is_unplugged_bundle (c[_other].bundle);
 
 	for (ARDOUR::Bundle::PortList::const_iterator i = our_ports.begin(); i != our_ports.end(); ++i) {
 		for (ARDOUR::Bundle::PortList::const_iterator j = other_ports.begin(); j != other_ports.end(); ++j) {
@@ -144,6 +161,15 @@ IOSelector::set_state (ARDOUR::BundleChannel c[2], bool s)
 			std::shared_ptr<Port> f = _session->engine().get_port_by_name (*i);
 			if (!f) {
 				return;
+			}
+
+			if (unplugged) {
+				/* the peer is absent; we can only forget the remembered
+				 * connection, not (re)connect to it */
+				if (!s) {
+					_io->forget_connection (f, *j);
+				}
+				continue;
 			}
 
 			if (s) {
@@ -175,6 +201,8 @@ IOSelector::get_state (ARDOUR::BundleChannel c[2]) const
 		return PortMatrixNode::NOT_ASSOCIATED;
 	}
 
+	bool const unplugged = is_unplugged_bundle (c[_other].bundle);
+
 	for (ARDOUR::Bundle::PortList::const_iterator i = our_ports.begin(); i != our_ports.end(); ++i) {
 		for (ARDOUR::Bundle::PortList::const_iterator j = other_ports.begin(); j != other_ports.end(); ++j) {
 
@@ -184,7 +212,13 @@ IOSelector::get_state (ARDOUR::BundleChannel c[2]) const
 			   so the above call should never fail */
 			assert (f);
 
-			if (!f->connected_to (*j)) {
+			if (unplugged) {
+				/* the peer port is absent, so a live connectivity query would
+				   always fail; decide from the remembered connection set instead */
+				if (!f->has_ext_connection (*j)) {
+					return PortMatrixNode::NOT_ASSOCIATED;
+				}
+			} else if (!f->connected_to (*j)) {
 				/* if any one thing is not connected, all bets are off */
 				return PortMatrixNode::NOT_ASSOCIATED;
 			}
